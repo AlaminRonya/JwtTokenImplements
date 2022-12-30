@@ -1,17 +1,21 @@
 package com.example.jwttokensimplements.security.config;
 
-import com.example.jwttokensimplements.security.AuthenticationProviderCustom;
+//import com.example.jwttokensimplements.security.AuthenticationProviderCustom;
 import com.example.jwttokensimplements.service.AppUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -20,9 +24,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAthFilter jwtAuthFilter;
-    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+//    private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final AppUserService appUserService;
-    private final AuthenticationProviderCustom provider;
+//    private final AuthenticationProviderCustom provider;
 //    private final static List<UserDetails> APPLICATION_USERS = Arrays.asList(
 //          new User(
 //               "admin@gmail.com",
@@ -38,7 +42,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http
+//        http
 //        .csrf().disable()
 //                .authorizeRequests()
 //                .antMatchers("/**/auth/**")
@@ -53,17 +57,28 @@ public class SecurityConfig {
 //                .anyRequest()
 //                .authenticated()
 //                .and()
-                .csrf().disable()
-                .authorizeHttpRequests(
-                        (authorize) ->
-                                authorize.requestMatchers("/**/auth/**").permitAll().anyRequest().authenticated())
+
+                http.csrf(csrf -> csrf.disable())
+//                .authorizeHttpRequests(
+//                        (authorize) ->
+//                                authorize.requestMatchers("/**/auth/**").permitAll().anyRequest().authenticated())
+
+                        .authorizeHttpRequests(auth -> {
+                            auth.requestMatchers("/**/auth/**").permitAll().anyRequest().authenticated().and();
+                        })
+
+
+
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authenticationProvider(provider.authenticationProvider())
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+
+
+
 
     }
     @Bean
@@ -72,15 +87,18 @@ public class SecurityConfig {
     }
 
 
-
-
-//    @Bean
-//    public AuthenticationProvider authenticationProvider() {
-//        final DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-//        provider.setPasswordEncoder(bCryptPasswordEncoder);
-//        provider.setUserDetailsService(appUserService);
-//        return provider;
-//    }
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        final DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(appUserService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+//        return NoOpPasswordEncoder.getInstance();
+        return new BCryptPasswordEncoder();
+    }
 
 //    @Bean
 //    public UserDetailsService userDetailsService(){
@@ -95,4 +113,8 @@ public class SecurityConfig {
 //            }
 //        };
 //    }
+
+
+
+
 }
